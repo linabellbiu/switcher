@@ -3,7 +3,7 @@
 
 #### switcher诞生是为了解决proto转dto繁琐的编码工作,解放工作量.
 
-<img src="https://big-c.oss-cn-hangzhou.aliyuncs.com/cms/img/2021/11/26/tyjtFbDSne1637911954443-1637911954443.gif" alt="图片" width="500" height="313" align="bottom" />
+<img src="https://big-c.oss-cn-hangzhou.aliyuncs.com/cms/img/2021/12/03/axG8D8Zi5X1638466008241-1638466008241.gif" alt="图片" width="510" height="333" align="bottom" />
 
 ### 安装
 `go get github.com/wangxudong123/switcher`

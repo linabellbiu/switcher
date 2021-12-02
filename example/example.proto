@@ -1,0 +1,23 @@
+//@switcher protoGoSrc [github.com/wangxudong123/switcher/example/proto]
+//@switcher out ./example/belong.go
+syntax = "proto3";
+
+package proto;
+
+//@switcher struct HelloWorldDto
+message HelloWorld {
+    string  field1 = 1;
+    string  field2 = 2;
+}
+
+
+message HelloWorld2 {
+    string  field2 = 1;
+    string  field3 = 2;
+}
+
+//@switcher struct HelloWorldDtoResponseDto
+message HelloWorldResponse {
+    repeated string field4 = 1;
+}
+

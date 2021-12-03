@@ -29,7 +29,7 @@ func (g *generator) Generate(pkg *model.Package, outFilePath string) error {
 	g.generateHead(g.pkg, outFilePath, pkg.Imports)
 	for _, outStruct := range pkg.Struct {
 		g.structName(outStruct.Name, outStruct.Field)
-		g.funcName(outStruct.Name, outStruct.OldName, g.mockType, outStruct.Field)
+		g.funcName(outStruct.Name, g.mockType, outStruct.OldName, outStruct.Field)
 	}
 
 	_, err := g.Output()
@@ -84,37 +84,39 @@ func (g *generator) structName(name string, fields []model.Field) {
 	g.p("")
 }
 
-func (g *generator) funcName(newStructName, oldStructName, pkgName string, fields []model.Field) {
+func (g *generator) funcName(newStructName, pkgName string, oldStructNames []string, fields []model.Field) {
 	if pkgName != "" {
 		pkgName = pkgName + "."
 	}
 
-	g.p("func New%vTo%v(data *%v%v) *%v {", oldStructName, newStructName, pkgName, oldStructName, newStructName)
-	g.p("return &%v{", newStructName)
-	g.in()
-	for _, field := range fields {
-		g.p("%v : data.%v,", field.Name, field.Name)
-	}
-	g.out()
-	g.in()
-	g.p("}")
-	g.out()
-	g.p("}")
-	g.p("")
+	for _, oldStructName := range oldStructNames {
+		g.p("func New%vTo%v(data *%v%v) *%v {", oldStructName, newStructName, pkgName, oldStructName, newStructName)
+		g.p("return &%v{", newStructName)
+		g.in()
+		for _, field := range fields {
+			g.p("%v : data.%v,", field.Name, field.Name)
+		}
+		g.out()
+		g.in()
+		g.p("}")
+		g.out()
+		g.p("}")
+		g.p("")
 
-	//相反的
-	g.p("func New%vTo%v(data *%v) *%v%v {", newStructName, oldStructName, newStructName, pkgName, oldStructName)
-	g.p("return &%v%v{", pkgName, oldStructName)
-	g.in()
-	for _, field := range fields {
-		g.p("%v : data.%v,", field.Name, field.Name)
+		//相反的
+		g.p("func New%vTo%v(data *%v) *%v%v {", newStructName, oldStructName, newStructName, pkgName, oldStructName)
+		g.p("return &%v%v{", pkgName, oldStructName)
+		g.in()
+		for _, field := range fields {
+			g.p("%v : data.%v,", field.Name, field.Name)
+		}
+		g.out()
+		g.in()
+		g.p("}")
+		g.out()
+		g.p("}")
+		g.p("")
 	}
-	g.out()
-	g.in()
-	g.p("}")
-	g.out()
-	g.p("}")
-	g.p("")
 }
 
 func (g *generator) p(format string, args ...interface{}) {

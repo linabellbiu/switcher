@@ -17,7 +17,7 @@ type Struct struct {
 	Name string
 	//Methods map[string]*Method
 	Field   []Field
-	OldName string
+	OldName []string
 }
 
 type Field struct {

@@ -117,8 +117,10 @@ func (b *proto) AddStruct(text string) error {
 		b.pkg.Struct[b.structType.outStructName] = &model.Struct{
 			Name:    b.structType.outStructName,
 			Field:   nil,
-			OldName: b.structType.structName,
+			OldName: []string{b.structType.structName},
 		}
+	} else {
+		b.pkg.Struct[b.structType.outStructName].OldName = append(b.pkg.Struct[b.structType.outStructName].OldName, b.structType.structName)
 	}
 	return nil
 }
@@ -131,20 +133,42 @@ func (b *proto) AddField(text string) {
 	}
 	//提取标量类型,转换go类型
 	goType := b.fieldType(delExtraSpace(s[0]))
-	if _, ok := b.pkg.Struct[b.structType.outStructName]; !ok {
+	var (
+		_struct *model.Struct
+		ok      bool
+	)
+
+	if _struct, ok = b.pkg.Struct[b.structType.outStructName]; !ok {
 		panic(errors.New(fmt.Sprintf("struct %s not found", b.structType.outStructName)))
 	}
+
 	if ss := strings.Split(delExtraSpace(s[0]), " "); len(ss) == 2 {
+
+		newFieldName := marshal(delExtraSpace(ss[1]))
+		for _, field := range _struct.Field {
+			//重复的字段
+			if newFieldName == field.Name {
+				return
+			}
+		}
+
 		b.pkg.Struct[b.structType.outStructName].Field = append(
 			b.pkg.Struct[b.structType.outStructName].Field, model.Field{
-				Name: marshal(delExtraSpace(ss[1])),
+				Name: newFieldName,
 				Type: goType,
 			},
 		)
 	} else if len(ss) == 3 {
+		newFieldName := marshal(delExtraSpace(ss[2]))
+		for _, field := range _struct.Field {
+			//重复的字段
+			if newFieldName == field.Name {
+				return
+			}
+		}
 		b.pkg.Struct[b.structType.outStructName].Field = append(
 			b.pkg.Struct[b.structType.outStructName].Field, model.Field{
-				Name: marshal(strings.Trim(delExtraSpace(ss[2]), " ")),
+				Name: newFieldName,
 				Type: goType,
 			},
 		)

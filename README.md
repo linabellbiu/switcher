@@ -47,5 +47,5 @@ message HelloWorld {
 ### 不支持
  - 不支持 `enum`
  - 不支持 `reserved`
- - 不支持 类型嵌套
+ - 不支持 `message`嵌套
  - 不支持 类型引用(下个迭代支持)

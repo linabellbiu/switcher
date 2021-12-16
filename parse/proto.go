@@ -14,14 +14,14 @@ type proto struct {
 	pkg        *model.Package
 	structType *structType
 	indent     string
-	outPath    string //输出的文件路径
-	comment    string //注解信息
+	outPath    string // 输出的文件路径
+	comment    string // 注解信息
 	head       bool
 }
 
 type structType struct {
-	structName    string //要转换结构体名字
-	outStructName string //输出的结构体名字
+	structName    string // 要转换结构体名字
+	outStructName string // 输出的结构体名字
 	ok            bool
 }
 
@@ -44,7 +44,7 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 			b.analyzeComment()
 		}
 		if packageName == "" {
-			//抓取当前proto文件的package
+			// 抓取当前proto文件的package
 			reg := regexp.MustCompile("^(package)\\s+[a-zA-Z0-9_]+;$")
 			result := reg.FindString(scanner.Text())
 			if result == "" {
@@ -76,7 +76,7 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 
 				if !b.structType.ok {
 					if err := b.AddStruct(text); err != nil {
-						//TODO error.warp
+						// TODO error.warp
 						panic(fmt.Sprintf(err.Error()+";in: %s", path))
 					}
 					b.structType.ok = true
@@ -131,7 +131,7 @@ func (b *proto) AddField(text string) {
 	if s = strings.Split(delExtraSpace(text), "="); len(s) != 2 {
 		panic(errors.New(fmt.Sprintf("field `=` ? :%s", text)))
 	}
-	//提取标量类型,转换go类型
+	// 提取标量类型,转换go类型
 	goType := b.fieldType(delExtraSpace(s[0]))
 	var (
 		_struct *model.Struct
@@ -146,7 +146,7 @@ func (b *proto) AddField(text string) {
 
 		newFieldName := marshal(delExtraSpace(ss[1]))
 		for _, field := range _struct.Field {
-			//重复的字段
+			// 重复的字段
 			if newFieldName == field.Name {
 				return
 			}
@@ -161,7 +161,7 @@ func (b *proto) AddField(text string) {
 	} else if len(ss) == 3 {
 		newFieldName := marshal(delExtraSpace(ss[2]))
 		for _, field := range _struct.Field {
-			//重复的字段
+			// 重复的字段
 			if newFieldName == field.Name {
 				return
 			}
@@ -177,16 +177,17 @@ func (b *proto) AddField(text string) {
 	}
 }
 
-//拆解注解
+// 拆解注解
 func (b *proto) analyzeComment() {
 	comment := strings.TrimLeft(b.comment, "//@switcher")
 	comment = strings.Trim(delExtraSpace(comment), " ")
-	//comments := strings.Split(comment, ">")
+	// comments := strings.Split(comment, ">")
 	if err := b.arg(comment); err != nil {
 		panic(errors.New(fmt.Sprintf("注解错误,%s", b.comment)))
 	}
-	//b.pkg.PkgPath = b.outPath
+	// b.pkg.PkgPath = b.outPath
 }
+
 func (b *proto) imports(imports []string) {
 	b.pkg.Imports = imports
 }
@@ -226,7 +227,7 @@ func (b *proto) fieldType(text string) string {
 			if _goType, ok := t[s[1]]; ok {
 				goType = "[]" + _goType
 			} else {
-				//是否存在导入的包
+				// 是否存在导入的包
 				if strings.Index(s[1], ".") == -1 {
 					goType = "[]*" + b.pkg.Name + "." + s[1]
 				} else {
@@ -243,7 +244,7 @@ func (b *proto) fieldType(text string) string {
 			if _goType, ok := t[s[0]]; ok {
 				goType = _goType
 			} else {
-				panic(fmt.Sprintf("暂时不支持类型:%s", s[0]))
+				goType = "*" + b.pkg.Name + "." + s[0]
 			}
 		} else {
 			panic(errors.New(fmt.Sprintf("field error: %s", text)))

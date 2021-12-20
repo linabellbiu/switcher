@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wangxudong123/switcher/model"
+	"github.com/wangxudong123/switcher/tool"
 	"os"
 	"regexp"
 	"strings"
@@ -26,6 +27,12 @@ type structType struct {
 }
 
 func Proto(pkg *model.Package, path string) (*proto, error) {
+	var packageName string
+
+	b := new(proto)
+	pkg.Struct = make(map[string]*model.Struct)
+	b.pkg = pkg
+
 	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -34,10 +41,6 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 
 	// 每行读取
 	scanner := bufio.NewScanner(f)
-	b := new(proto)
-	pkg.Struct = make(map[string]*model.Struct)
-	b.pkg = pkg
-	var packageName string
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), "//@switcher") {
 			b.comment = scanner.Text()
@@ -69,7 +72,7 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 				}
 
 				reg := regexp.MustCompile("^//")
-				result := reg.FindString(delSpace(text))
+				result := reg.FindString(tool.DelSpace(text))
 				if result != "" {
 					continue
 				}
@@ -82,7 +85,7 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 					b.structType.ok = true
 					continue
 				}
-				if strings.Trim(delExtraSpace(scanner.Text()), " ") == "}" {
+				if strings.Trim(tool.DelExtraSpace(scanner.Text()), " ") == "}" {
 					break
 				}
 				b.AddField(text)
@@ -103,7 +106,7 @@ func Proto(pkg *model.Package, path string) (*proto, error) {
 func (b *proto) AddStruct(text string) error {
 	var s []string
 
-	if s = strings.Split(delExtraSpace(text), " "); len(s) != 3 {
+	if s = strings.Split(tool.DelExtraSpace(text), " "); len(s) != 3 {
 		return errors.New(fmt.Sprintf("not found struct name in: %s", text))
 	}
 
@@ -128,11 +131,11 @@ func (b *proto) AddStruct(text string) error {
 func (b *proto) AddField(text string) {
 	var s []string
 
-	if s = strings.Split(delExtraSpace(text), "="); len(s) != 2 {
+	if s = strings.Split(tool.DelExtraSpace(text), "="); len(s) != 2 {
 		panic(errors.New(fmt.Sprintf("field `=` ? :%s", text)))
 	}
 	// 提取标量类型,转换go类型
-	goType := b.fieldType(delExtraSpace(s[0]))
+	goType := b.fieldType(tool.DelExtraSpace(s[0]))
 	var (
 		_struct *model.Struct
 		ok      bool
@@ -142,9 +145,9 @@ func (b *proto) AddField(text string) {
 		panic(errors.New(fmt.Sprintf("struct %s not found", b.structType.outStructName)))
 	}
 
-	if ss := strings.Split(delExtraSpace(s[0]), " "); len(ss) == 2 {
+	if ss := strings.Split(tool.DelExtraSpace(s[0]), " "); len(ss) == 2 {
 
-		newFieldName := marshal(delExtraSpace(ss[1]))
+		newFieldName := marshal(tool.DelExtraSpace(ss[1]))
 		for _, field := range _struct.Field {
 			// 重复的字段
 			if newFieldName == field.Name {
@@ -159,7 +162,7 @@ func (b *proto) AddField(text string) {
 			},
 		)
 	} else if len(ss) == 3 {
-		newFieldName := marshal(delExtraSpace(ss[2]))
+		newFieldName := marshal(tool.DelExtraSpace(ss[2]))
 		for _, field := range _struct.Field {
 			// 重复的字段
 			if newFieldName == field.Name {
@@ -180,7 +183,7 @@ func (b *proto) AddField(text string) {
 // 拆解注解
 func (b *proto) analyzeComment() {
 	comment := strings.TrimLeft(b.comment, "//@switcher")
-	comment = strings.Trim(delExtraSpace(comment), " ")
+	comment = strings.Trim(tool.DelExtraSpace(comment), " ")
 	// comments := strings.Split(comment, ">")
 	if err := b.arg(comment); err != nil {
 		panic(errors.New(fmt.Sprintf("注解错误,%s", b.comment)))
@@ -208,10 +211,10 @@ func (b *proto) arg(text string) error {
 		result = strings.TrimRight(result, "]")
 		b.imports([]string{strings.TrimLeft(result, "[")})
 	case "out":
-		b.outPath = delSpace(arg[1])
+		b.outPath = tool.DelSpace(arg[1])
 	case "struct":
 		b.structType = &structType{
-			outStructName: delSpace(arg[1]),
+			outStructName: tool.DelSpace(arg[1]),
 		}
 	default:
 	}
@@ -269,4 +272,43 @@ var t = map[string]string{
 	"sfixed32": "unit32",
 	"sfixed64": "unit64",
 	"byte":     "[]byte",
+}
+
+/*
+	转换为大驼峰命名法则
+	首字母大写，“_” 忽略后大写
+*/
+func marshal(name string) string {
+	if name == "" {
+		return ""
+	}
+	temp := strings.Split(name, "_")
+	var s string
+	for _, v := range temp {
+		vv := []rune(v)
+		if len(vv) > 0 {
+			if bool(vv[0] >= 'a' && vv[0] <= 'z') { // 首字母大写
+				vv[0] -= 32
+			}
+			s += string(vv)
+		}
+	}
+	s = uncommonInitialismsReplacer.Replace(s)
+	return s
+}
+
+// Copied from golint
+var commonInitialisms []string
+
+// var commonInitialisms = []string{"ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"}
+var uncommonInitialismsReplacer *strings.Replacer
+
+func init() {
+	var commonInitialismsForReplacer []string
+	var uncommonInitialismsForReplacer []string
+	for _, initialism := range commonInitialisms {
+		commonInitialismsForReplacer = append(commonInitialismsForReplacer, initialism, strings.Title(strings.ToLower(initialism)))
+		uncommonInitialismsForReplacer = append(uncommonInitialismsForReplacer, strings.Title(strings.ToLower(initialism)), initialism)
+	}
+	uncommonInitialismsReplacer = strings.NewReplacer(uncommonInitialismsForReplacer...)
 }

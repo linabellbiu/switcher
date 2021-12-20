@@ -6,6 +6,7 @@ import (
 	cmd "github.com/wangxudong123/easy-command"
 	"github.com/wangxudong123/switcher/model"
 	"github.com/wangxudong123/switcher/parse"
+	"github.com/wangxudong123/switcher/tool"
 	"log"
 	"os"
 	"path/filepath"
@@ -49,7 +50,7 @@ func Walkfunc(path string, info os.FileInfo, err error) error {
 	}
 	ext := filepath.Ext(path)
 	//黑白名单
-	if !parse.In(ext, postfixWhitelist) || parse.In(ext, postfixBlacklist) {
+	if !tool.In(ext, postfixWhitelist) || tool.In(ext, postfixBlacklist) {
 		return nil
 	}
 

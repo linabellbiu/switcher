@@ -3,12 +3,14 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	cmd "github.com/wangxudong123/easy-command"
-	"github.com/wangxudong123/switcher/model"
-	"github.com/wangxudong123/switcher/parse"
 	"log"
 	"os"
 	"path/filepath"
+
+	cmd "github.com/wangxudong123/easy-command"
+	"github.com/wangxudong123/switcher/model"
+	"github.com/wangxudong123/switcher/parse"
+	"github.com/wangxudong123/switcher/tool"
 )
 
 var (
@@ -43,13 +45,13 @@ func main() {
 }
 
 func Walkfunc(path string, info os.FileInfo, err error) error {
-	//过滤目录
+	// 过滤目录
 	if info.IsDir() {
 		return nil
 	}
 	ext := filepath.Ext(path)
-	//黑白名单
-	if !parse.In(ext, postfixWhitelist) || parse.In(ext, postfixBlacklist) {
+	// 黑白名单
+	if !tool.In(ext, postfixWhitelist) || tool.In(ext, postfixBlacklist) {
 		return nil
 	}
 
